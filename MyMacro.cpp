@@ -3,20 +3,35 @@
 
 #include "framework.h"
 #include "MyMacro.h"
+#include <Windows.h>
+#include <windowsx.h>
+#include <string>
+#include <sstream>
+#include <iostream>
 
+#define IDM_FILE_NEW 1
+#define IDM_FILE_OPEN 2
+#define IDM_FILE_QUIT 3
 #define MAX_LOADSTRING 100
+#define IDC_SEND 4
 
+
+using namespace std;
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+double mouse[2]={100,100};
+LPCWSTR lpcw;
+string s;
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
+void AddMenus(HWND hwnd);
+wstring s2ws(const string& s);
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -26,7 +41,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: 여기에 코드를 입력합니다.
-
+    s = to_string(mouse[0]);
+    wstring stemp = s2ws(s);
+    lpcw = stemp.c_str();
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_MYMACRO, szWindowClass, MAX_LOADSTRING);
@@ -123,8 +140,19 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    PAINTSTRUCT ps;
+    HDC hdc;
+
     switch (message)
     {
+    case WM_LBUTTONDOWN:
+    {   
+
+        mouse[0] = GET_X_LPARAM(lParam);
+        mouse[1] = GET_Y_LPARAM(lParam);
+        CreateWindow(L"edit", lpcw, WS_CHILD | WS_VISIBLE | WS_BORDER, 60, 10, 200, 20, hWnd, (HMENU)501, hInst, NULL);
+    }
+    break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -153,6 +181,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+    case WM_CREATE:
+        AddMenus(hWnd);
+        CreateWindow(L"button", L"SendButton", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            10, 160, 100, 30, hWnd, (HMENU)IDC_SEND, hInst, NULL);
+        CreateWindow(L"static", L"Xpos", WS_CHILD | WS_VISIBLE | WS_BORDER, 10, 10, 50, 20, hWnd, (HMENU)501, hInst, NULL);
+        CreateWindow(L"edit", lpcw, WS_CHILD | WS_VISIBLE | WS_BORDER, 60, 10, 200, 20, hWnd, (HMENU)501, hInst, NULL);
+        
+        break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -177,4 +213,33 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+void AddMenus(HWND hWnd) {
+    
+    HMENU hMenubar;
+    HMENU hMenu;
+
+    hMenubar = CreateMenu();
+    hMenu = CreateMenu();
+
+    AppendMenuW(hMenu, MF_STRING, IDM_FILE_NEW, L"&New");
+    AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
+
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu, L"&menu");
+
+
+    SetMenu(hWnd, hMenubar);
+}
+
+wstring s2ws(const string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
 }

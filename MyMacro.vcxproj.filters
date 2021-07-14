@@ -32,6 +32,9 @@
     <ClCompile Include="MyMacro.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="testcpp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MyMacro.rc">

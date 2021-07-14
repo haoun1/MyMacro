@@ -1,0 +1,21 @@
+#include "framework.h"
+#include "MyMacro.h"
+
+HINSTANCE hInst //현재 인스턴스
+WCHAR szTitle[MAX_LOARDSTRING=100] //제목 표시줄 텍스트 = 2바이트짜리 문자가 100개 있는 것
+WCHAR szWindowClass[100] // 기본 창 클래스 이름
+
+ATOM MyRegisterClass(HINSTANCE hinstance); //창 클래스를 등록
+
+
+BOOL InitInstance(HINSTANCE hInstance , int nCmdShow) // 인스턴스 핸들을 저장하고 주 창을 만든다.
+(hInst라는 전역변수에 hInstance를 저장, CreateWindow, showWindow, UpdateWindow함수 실행)
+-> hWnd라는 변수에 CreateWindow가 담김
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPAPRAM, wParam, LPARAM lParam)//주 창의 메시지를 처리
+(WM_COMMAND - 에플리케이션 메뉴를 처리, WM_PAINT - 주 창을 그린다, WM_DESTROY - 종료메시지 표시하고 반환)
+switch case에서 case가 wm_paint, wm_command, wm_destroy로 나뉨
+
+
+
+
