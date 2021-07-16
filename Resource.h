@@ -15,6 +15,11 @@
 #define IDC_MYICON				2
 #ifndef IDC_STATIC
 #define IDC_STATIC				-1
+#define IDC_LISTBOX				500
+#define IDC_START				200
+#define IDC_STOP				201
+#define IDC_RESET				202
+
 #endif
 // 다음은 새 개체에 사용할 기본값입니다.
 //

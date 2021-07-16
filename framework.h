@@ -13,3 +13,8 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
+#include <windowsx.h>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <atlstr.h>

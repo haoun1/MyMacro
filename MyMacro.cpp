@@ -3,12 +3,6 @@
 
 #include "framework.h"
 #include "MyMacro.h"
-#include <Windows.h>
-#include <windowsx.h>
-#include <string>
-#include <sstream>
-#include <iostream>
-
 #define IDM_FILE_NEW 1
 #define IDM_FILE_OPEN 2
 #define IDM_FILE_QUIT 3
@@ -21,17 +15,19 @@ using namespace std;
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
-double mouse[2]={100,100};
-LPCWSTR lpcw;
-string s;
+double mouse[22];
+int pcount = 0;
+string s2;
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-void AddMenus(HWND hwnd);
-wstring s2ws(const string& s);
+void AddMenus(HWND hWnd);
+wstring d2ws(double d);
+void OnBnClickButton1(HWND hWnd);
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -41,9 +37,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: 여기에 코드를 입력합니다.
-    s = to_string(mouse[0]);
-    wstring stemp = s2ws(s);
-    lpcw = stemp.c_str();
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_MYMACRO, szWindowClass, MAX_LOADSTRING);
@@ -113,7 +106,6 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
-
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
@@ -142,53 +134,98 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     PAINTSTRUCT ps;
     HDC hdc;
-
+    static HWND List;
+    static HWND Button;
     switch (message)
     {
-    case WM_LBUTTONDOWN:
-    {   
+    case WM_RBUTTONDOWN:
+    {
+    }
 
+        break;
+    case WM_LBUTTONDOWN:
+    {
+        if (pcount <= 18)
+        {
+            mouse[pcount + 2] = GET_X_LPARAM(lParam);
+            mouse[pcount + 3] = GET_Y_LPARAM(lParam);
+            pcount = pcount + 2;
+            wchar_t buffer1[60], buffer2[20] = TEXT(".Xpos : "), buffer3[10], buffer4[20] = TEXT("  Ypos : "), buffer5[10];
+            swprintf(buffer1, 4, TEXT("%d"), pcount / 2);
+            swprintf(buffer3, 5, TEXT("%g"), mouse[pcount]);
+            swprintf(buffer5, 5, TEXT("%g"), mouse[pcount + 1]);
+            SendMessage(List, LB_ADDSTRING, 0, (LPARAM)wcscat(wcscat(wcscat(buffer1, buffer2), buffer3), wcscat(buffer4, buffer5)));
+        }
+        else
+        {
+            MessageBox(hWnd, _T("10번 이상은 불가능합니다."), _T("OK"), MB_OK);
+        }
+
+
+        UpdateWindow(hWnd);
+    }
+        break;
+    case WM_LBUTTONUP:
+        break;
+    case WM_MOUSEMOVE:
+    {
         mouse[0] = GET_X_LPARAM(lParam);
         mouse[1] = GET_Y_LPARAM(lParam);
-        CreateWindow(L"edit", lpcw, WS_CHILD | WS_VISIBLE | WS_BORDER, 60, 10, 200, 20, hWnd, (HMENU)501, hInst, NULL);
+        break;
+    }
+    case WM_COMMAND:
+    {   
+        int wmId = LOWORD(wParam);
+        // 메뉴 선택을 구문 분석합니다:
+        switch (wmId)
+        {
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        case IDC_START:
+            OnBnClickButton1(hWnd);
+            break;
+        case IDC_STOP:
+            break;
+        case IDC_RESET:
+            fill_n(mouse, 50, NULL);
+            pcount = 0;
+            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 0, 40, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
     }
     break;
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // 메뉴 선택을 구문 분석합니다:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-            EndPaint(hWnd, &ps);
-        }
-        break;
+    {
+        hdc = BeginPaint(hWnd, &ps);
+        // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+        TextOut(hdc, 300, 300, d2ws(mouse[0]).c_str(), lstrlen(d2ws(mouse[0]).c_str()));
+        TextOut(hdc, 500, 300, d2ws(mouse[1]).c_str(), lstrlen(d2ws(mouse[1]).c_str()));
+        InvalidateRect(hWnd, NULL, FALSE);
+        EndPaint(hWnd, &ps);
+    }
+    break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
     case WM_CREATE:
+    {
         AddMenus(hWnd);
-        CreateWindow(L"button", L"SendButton", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-            10, 160, 100, 30, hWnd, (HMENU)IDC_SEND, hInst, NULL);
-        CreateWindow(L"static", L"Xpos", WS_CHILD | WS_VISIBLE | WS_BORDER, 10, 10, 50, 20, hWnd, (HMENU)501, hInst, NULL);
-        CreateWindow(L"edit", lpcw, WS_CHILD | WS_VISIBLE | WS_BORDER, 60, 10, 200, 20, hWnd, (HMENU)501, hInst, NULL);
-        
-        break;
+        CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 300, 100, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
+        CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 300, 50, 30, hWnd, (HMENU)IDC_STOP, hInst, NULL);
+        CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 300, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
+        CreateWindow(TEXT("static"), TEXT("Cursor"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 0, 20, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        CreateWindow(TEXT("static"), TEXT("Xpos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 105, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        CreateWindow(TEXT("static"), TEXT("Ypos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 205, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL , 0, 40, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+            //  CreateWindow(L"edit", L"", WS_CHILD | WS_VISIBLE | WS_BORDER, 60, 10, 200, 20, hWnd, (HMENU)501, hInst, NULL);       */
+    }
+    break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -232,8 +269,10 @@ void AddMenus(HWND hWnd) {
     SetMenu(hWnd, hMenubar);
 }
 
-wstring s2ws(const string& s)
+wstring d2ws(double d)
 {
+
+    string s = to_string(d);
     int len;
     int slength = (int)s.length() + 1;
     len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
@@ -241,5 +280,15 @@ wstring s2ws(const string& s)
     MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
     std::wstring r(buf);
     delete[] buf;
+
     return r;
+}
+
+void OnBnClickButton1(HWND hWnd)
+{
+    RECT rt;
+    GetWindowRect(hWnd, &rt);
+    SetCursorPos(rt.left, rt.top); // 정상
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 }
