@@ -3,6 +3,7 @@
 
 #include "framework.h"
 #include "MyMacro.h"
+#include "resource.h"
 #define IDM_FILE_NEW 1
 #define IDM_FILE_OPEN 2
 #define IDM_FILE_QUIT 3
@@ -27,6 +28,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 void AddMenus(HWND hWnd);
 wstring d2ws(double d);
 void OnBnClickButton1(HWND hWnd);
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -145,6 +147,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_LBUTTONDOWN:
     {
+        DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), HWND_DESKTOP, About);
         if (pcount <= 18)
         {
             mouse[pcount + 2] = GET_X_LPARAM(lParam);
@@ -154,11 +157,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             swprintf(buffer1, 4, TEXT("%d"), pcount / 2);
             swprintf(buffer3, 5, TEXT("%g"), mouse[pcount]);
             swprintf(buffer5, 5, TEXT("%g"), mouse[pcount + 1]);
-            SendMessage(List, LB_ADDSTRING, 0, (LPARAM)wcscat(wcscat(wcscat(buffer1, buffer2), buffer3), wcscat(buffer4, buffer5)));
+            wcscat_s(buffer1, _countof(buffer1), buffer2);
+            wcscat_s(buffer1, _countof(buffer1), buffer3);
+            wcscat_s(buffer1, _countof(buffer1), buffer4);
+            wcscat_s(buffer1, _countof(buffer1), buffer5);
+            SendMessage(List, LB_ADDSTRING, 0, (LPARAM)buffer1);
         }
         else
         {
-            MessageBox(hWnd, _T("10번 이상은 불가능합니다."), _T("OK"), MB_OK);
+            MessageBox(hWnd, _T("10번 이상은 불가능합니다."), _T("OK"), MB_OK | MB_TOPMOST);
         }
 
 
@@ -206,7 +213,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
         TextOut(hdc, 300, 300, d2ws(mouse[0]).c_str(), lstrlen(d2ws(mouse[0]).c_str()));
         TextOut(hdc, 500, 300, d2ws(mouse[1]).c_str(), lstrlen(d2ws(mouse[1]).c_str()));
-        InvalidateRect(hWnd, NULL, FALSE);
+        RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
         EndPaint(hWnd, &ps);
     }
     break;
@@ -226,11 +233,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //  CreateWindow(L"edit", L"", WS_CHILD | WS_VISIBLE | WS_BORDER, 60, 10, 200, 20, hWnd, (HMENU)501, hInst, NULL);       */
     }
     break;
+    case WM_INITDIALOG:
+        SetTimer(hWnd, 1000, 1000, NULL);
+        //other initialisation stuff
+        break;
+    case WM_TIMER:
+        if (wParam == 1000)
+        {
+            InvalidateRect(hWnd, NULL, FALSE);   // invalidate whole window
+        }
+        break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
 }
+
 
 // 정보 대화 상자의 메시지 처리기입니다.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
