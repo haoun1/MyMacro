@@ -18,7 +18,7 @@ WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 double mouse[22];
 int pcount = 0;
-string s2;
+int painton = 1;
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -138,6 +138,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     HDC hdc;
     static HWND List;
     static HWND Button;
+    RECT r = { 105, 20, 305, 40 };
+    if (painton == 1)
+        InvalidateRect(hWnd, &r, FALSE);
+
     switch (message)
     {
     case WM_RBUTTONDOWN:
@@ -147,7 +151,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_LBUTTONDOWN:
     {
-        DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), HWND_DESKTOP, About);
+       
         if (pcount <= 18)
         {
             mouse[pcount + 2] = GET_X_LPARAM(lParam);
@@ -165,11 +169,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         else
         {
-            MessageBox(hWnd, _T("10번 이상은 불가능합니다."), _T("OK"), MB_OK | MB_TOPMOST);
+            painton = 0;
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), HWND_DESKTOP, About);
         }
 
-
         UpdateWindow(hWnd);
+       
     }
         break;
     case WM_LBUTTONUP:
@@ -211,9 +216,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         hdc = BeginPaint(hWnd, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-        TextOut(hdc, 300, 300, d2ws(mouse[0]).c_str(), lstrlen(d2ws(mouse[0]).c_str()));
-        TextOut(hdc, 500, 300, d2ws(mouse[1]).c_str(), lstrlen(d2ws(mouse[1]).c_str()));
-        RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
+        TextOut(hdc, 105, 20, d2ws(mouse[0]).c_str(), lstrlen(d2ws(mouse[0]).c_str()));
+        TextOut(hdc, 205, 20, d2ws(mouse[1]).c_str(), lstrlen(d2ws(mouse[1]).c_str()));
         EndPaint(hWnd, &ps);
     }
     break;
@@ -234,14 +238,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     break;
     case WM_INITDIALOG:
-        SetTimer(hWnd, 1000, 1000, NULL);
-        //other initialisation stuff
         break;
     case WM_TIMER:
-        if (wParam == 1000)
-        {
-            InvalidateRect(hWnd, NULL, FALSE);   // invalidate whole window
-        }
         break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -251,7 +249,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 // 정보 대화 상자의 메시지 처리기입니다.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
@@ -262,7 +260,8 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
-            EndDialog(hDlg, LOWORD(wParam));
+            EndDialog(hWnd, LOWORD(wParam));
+            painton = 1;
             return (INT_PTR)TRUE;
         }
         break;
