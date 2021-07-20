@@ -16,17 +16,20 @@ using namespace std;
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
-double mouse[22];
+double mouse[20];
 int pcount = 0;
 int painton = 1;
+int write = 1;
 
+POINT mousep;
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-void AddMenus(HWND hWnd);
-wstring d2ws(double d);
+//void AddMenus(HWND hWnd); //윈도우에 메뉴바를 추가하는 함수 입니다. WM_CREATE메시지를 받았을때 수행합니다.
+wstring d2ws(double d); /*DOUBLE형식의 마우스 좌표를 받아서 wstring형식으로 바꿔서 반환합니다.
+                        (paint작업이나 list, 버튼, 레이블 등의 입력이 LPCWSTR을 주로 받기 때문에 이용합니다*/
 void OnBnClickButton1(HWND hWnd);
 
 
@@ -37,13 +40,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
+    
     // TODO: 여기에 코드를 입력합니다.
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_MYMACRO, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
-
+    
     // 애플리케이션 초기화를 수행합니다:
     if (!InitInstance (hInstance, nCmdShow))
     {
@@ -142,6 +145,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     if (painton == 1)
         InvalidateRect(hWnd, &r, FALSE);
 
+
+
     switch (message)
     {
     case WM_RBUTTONDOWN:
@@ -152,13 +157,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_LBUTTONDOWN:
     {
        
-        if (pcount <= 18)
+        if (pcount <= 18 && write == 1)
         {
-            mouse[pcount + 2] = GET_X_LPARAM(lParam);
-            mouse[pcount + 3] = GET_Y_LPARAM(lParam);
-            pcount = pcount + 2;
+            mousep.x = GET_X_LPARAM(lParam);
+            mousep.y = GET_Y_LPARAM(lParam);
+            ClientToScreen(hWnd, &mousep);
+            mouse[pcount] = mousep.x;
+            mouse[pcount + 1] = mousep.y;
             wchar_t buffer1[60], buffer2[20] = TEXT(".Xpos : "), buffer3[10], buffer4[20] = TEXT("  Ypos : "), buffer5[10];
-            swprintf(buffer1, 4, TEXT("%d"), pcount / 2);
+            swprintf(buffer1, 4, TEXT("%d"), pcount / 2 + 1);
             swprintf(buffer3, 5, TEXT("%g"), mouse[pcount]);
             swprintf(buffer5, 5, TEXT("%g"), mouse[pcount + 1]);
             wcscat_s(buffer1, _countof(buffer1), buffer2);
@@ -166,6 +173,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             wcscat_s(buffer1, _countof(buffer1), buffer4);
             wcscat_s(buffer1, _countof(buffer1), buffer5);
             SendMessage(List, LB_ADDSTRING, 0, (LPARAM)buffer1);
+            pcount = pcount + 2;
         }
         else
         {
@@ -181,8 +189,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_MOUSEMOVE:
     {
-        mouse[0] = GET_X_LPARAM(lParam);
-        mouse[1] = GET_Y_LPARAM(lParam);
+        mousep.x = GET_X_LPARAM(lParam);
+        mousep.y = GET_Y_LPARAM(lParam);
+        ClientToScreen(hWnd, &mousep);
         break;
     }
     case WM_COMMAND:
@@ -199,6 +208,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDC_START:
             OnBnClickButton1(hWnd);
+            write = 1;
             break;
         case IDC_STOP:
             break;
@@ -216,8 +226,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         hdc = BeginPaint(hWnd, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-        TextOut(hdc, 105, 20, d2ws(mouse[0]).c_str(), lstrlen(d2ws(mouse[0]).c_str()));
-        TextOut(hdc, 205, 20, d2ws(mouse[1]).c_str(), lstrlen(d2ws(mouse[1]).c_str()));
+        TextOut(hdc, 105, 20, d2ws(mousep.x).c_str(), lstrlen(d2ws(mouse[0]).c_str()));
+        TextOut(hdc, 205, 20, d2ws(mousep.y).c_str(), lstrlen(d2ws(mouse[1]).c_str()));
         EndPaint(hWnd, &ps);
     }
     break;
@@ -226,7 +236,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_CREATE:
     {
-        AddMenus(hWnd);
+      //  AddMenus(hWnd);
         CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 300, 100, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
         CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 300, 50, 30, hWnd, (HMENU)IDC_STOP, hInst, NULL);
         CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 300, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
@@ -234,7 +244,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         CreateWindow(TEXT("static"), TEXT("Xpos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 105, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
         CreateWindow(TEXT("static"), TEXT("Ypos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 205, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
         List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL , 0, 40, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
-            //  CreateWindow(L"edit", L"", WS_CHILD | WS_VISIBLE | WS_BORDER, 60, 10, 200, 20, hWnd, (HMENU)501, hInst, NULL);       */
     }
     break;
     case WM_INITDIALOG:
@@ -268,7 +277,7 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-
+/*
 void AddMenus(HWND hWnd) {
     
     HMENU hMenubar;
@@ -284,7 +293,7 @@ void AddMenus(HWND hWnd) {
 
 
     SetMenu(hWnd, hMenubar);
-}
+}*/
 
 wstring d2ws(double d)
 {
@@ -300,12 +309,14 @@ wstring d2ws(double d)
 
     return r;
 }
-
 void OnBnClickButton1(HWND hWnd)
 {
-    RECT rt;
-    GetWindowRect(hWnd, &rt);
-    SetCursorPos(rt.left, rt.top); // 정상
-    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-}
+    write = 0;
+    for (int i = 0; i < pcount; i += 2) {
+        SetCursorPos(mouse[i], mouse[i+1]); // 정상
+        mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+        Sleep(1000);
+    }
+    write = 1;
+ }
