@@ -16,10 +16,10 @@ using namespace std;
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
-double mouse[20];
-int painton = 1;
-int pcount = 0;
-int write = 0;
+double mouse[20];                               // 클릭한 좌표를 저장해놓고 반복시작할때 참고하는 배열
+int painton = 1;                                // 1이면 WM_PAINT의 반복호출을함 0이면 멈춤
+int pcount = 0;                                 // mouse[20]에 값을 넣고 참조하는데 활용하는 변수
+int write = 0;                                  // write = 1이면 처음 윈도우의 listbox에 mouse[20]에 저장 된 값들을 넣어줌
 POINT mmove;
 POINT mclick;
 BOOL check[10] = { FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE };
@@ -33,7 +33,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 //void AddMenus(HWND hWnd); //윈도우에 메뉴바를 추가하는 함수 입니다. WM_CREATE메시지를 받았을때 수행합니다.
 wstring d2ws(double d); /*DOUBLE형식의 마우스 좌표를 받아서 wstring형식으로 바꿔서 반환합니다.
                         (paint작업이나 list, 버튼, 레이블 등의 입력이 LPCWSTR을 주로 받기 때문에 이용합니다*/
-void OnBnClickButton1(HWND hWnd);
+void MoveButton(HWND hWnd);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -190,9 +190,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         // 메뉴 선택을 구문 분석합니다:
         switch (wmId)
         {
-        case IDM_ABOUT:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-            break;
         case IDM_EXIT:
             DestroyWindow(hWnd);
             break;
@@ -200,7 +197,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             fill_n(mouse, 50, NULL);
             pcount = 0; 
             List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG2), HWND_DESKTOP, About);
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), HWND_DESKTOP, About);
             break;
         case IDC_STOP:
             break;
@@ -227,6 +224,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
     {
       //  AddMenus(hWnd);
+        int x, y, width, height;
+        RECT rtDesk, rtWindow;
+        GetWindowRect(GetDesktopWindow(), &rtDesk);
+        GetWindowRect(hWnd, &rtWindow);
+
+        width = rtWindow.right - rtWindow.left;
+        height = rtWindow.bottom - rtWindow.top;
+
+        x = (rtDesk.right - width) / 2;
+        y = (rtDesk.bottom - height) / 2;
+        MoveWindow(hWnd, x, y, width, height, TRUE);
         CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 200, 100, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
         CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 200, 50, 30, hWnd, (HMENU)IDC_STOP, hInst, NULL);
         CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 200, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
@@ -281,7 +289,9 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         else
         {
             painton = 0;
-            MessageBox(hWnd, L"10개 이상은 불가능합니다", NULL, MB_OK);
+            if (MessageBox(hWnd, TEXT("10번 이상은 불가능합니다."), TEXT("WARNING"), MB_OK))
+                painton = 1;
+         
         }
     }
     break;
@@ -293,6 +303,8 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             EndDialog(hWnd, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
+        else if(LOWORD(wParam) == MB_OK)
+            OutputDebugString(TEXT("ㅋㅋㅋ"));
         break;
     case WM_PAINT:
     {
@@ -318,23 +330,6 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             
     return (INT_PTR)FALSE;
 }
-/*
-void AddMenus(HWND hWnd) {
-    
-    HMENU hMenubar;
-    HMENU hMenu;
-
-    hMenubar = CreateMenu();
-    hMenu = CreateMenu();
-
-    AppendMenuW(hMenu, MF_STRING, IDM_FILE_NEW, L"&New");
-    AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
-
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu, L"&menu");
-
-
-    SetMenu(hWnd, hMenubar);
-}*/
 
 wstring d2ws(double d)
 {
@@ -350,7 +345,7 @@ wstring d2ws(double d)
 
     return r;
 }
-void OnBnClickButton1(HWND hWnd)
+void MoveButton(HWND hWnd)
 {
     for (int i = 0; i < pcount; i += 2) {
         SetCursorPos(mouse[i], mouse[i+1]); // 정상
