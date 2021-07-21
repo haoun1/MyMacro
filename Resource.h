@@ -12,7 +12,17 @@
 #define IDI_SMALL                       108
 #define IDC_MYMACRO                     109
 #define IDR_MAINFRAME                   128
-#define IDD_DIALOG1                     129
+#define IDD_DIALOG2                     131
+#define IDB_BITMAP1                     144
+#define IDB_BITMAP2                     145
+#define IDB_BITMAP3                     146
+#define IDB_BITMAP4                     147
+#define IDB_BITMAP5                     148
+#define IDB_BITMAP6                     149
+#define IDB_BITMAP7                     150
+#define IDB_BITMAP8                     151
+#define IDB_BITMAP9                     152
+#define IDB_BITMAP10                    153
 #define IDC_START                       200
 #define IDC_STOP                        201
 #define IDC_RESET                       202
@@ -24,7 +34,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        154
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110

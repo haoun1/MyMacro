@@ -17,11 +17,14 @@ HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 double mouse[20];
-int pcount = 0;
 int painton = 1;
-int write = 1;
+int pcount = 0;
+int write = 0;
+POINT mmove;
+POINT mclick;
+BOOL check[10] = { FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE };
 
-POINT mousep;
+
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -82,7 +85,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     WNDCLASSEXW wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
-
+    
     wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = WndProc;
     wcex.cbClsExtra     = 0;
@@ -91,7 +94,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MYMACRO));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MYMACRO);
+    wcex.lpszMenuName = NULL;
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -111,8 +114,8 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPED | WS_SYSMENU,
+      CW_USEDEFAULT, 0, 330, 270, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -141,12 +144,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     HDC hdc;
     static HWND List;
     static HWND Button;
-    RECT r = { 105, 20, 305, 40 };
-    if (painton == 1)
-        InvalidateRect(hWnd, &r, FALSE);
-
-
-
+    if (pcount > 1 && write == 1)
+        {
+            int count = SendMessage(List, LB_GETCOUNT, 0, 0);
+            for (int i = 0; i < count; i++)
+            {
+                SendMessage(List, LB_DELETESTRING, 0, 0);
+            }
+            for (int i = 0; i < pcount; i += 2)
+            {
+                wchar_t buffer1[60], buffer2[20] = TEXT(".Xpos : "), buffer3[10], buffer4[20] = TEXT("  Ypos : "), buffer5[10];
+                swprintf(buffer1, 4, TEXT("%d"), i / 2 + 1);
+                swprintf(buffer3, 5, TEXT("%g"), mouse[i]);
+                swprintf(buffer5, 5, TEXT("%g"), mouse[i + 1]);
+                wcscat_s(buffer1, _countof(buffer1), buffer2);
+                wcscat_s(buffer1, _countof(buffer1), buffer3);
+                wcscat_s(buffer1, _countof(buffer1), buffer4);
+                wcscat_s(buffer1, _countof(buffer1), buffer5);
+                SendMessage(List, LB_ADDSTRING, 0, (LPARAM)buffer1);
+            }
+            write = 0;
+            UpdateWindow(hWnd);
+        }
+ 
     switch (message)
     {
     case WM_RBUTTONDOWN:
@@ -156,42 +176,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_LBUTTONDOWN:
     {
-       
-        if (pcount <= 18 && write == 1)
-        {
-            mousep.x = GET_X_LPARAM(lParam);
-            mousep.y = GET_Y_LPARAM(lParam);
-            ClientToScreen(hWnd, &mousep);
-            mouse[pcount] = mousep.x;
-            mouse[pcount + 1] = mousep.y;
-            wchar_t buffer1[60], buffer2[20] = TEXT(".Xpos : "), buffer3[10], buffer4[20] = TEXT("  Ypos : "), buffer5[10];
-            swprintf(buffer1, 4, TEXT("%d"), pcount / 2 + 1);
-            swprintf(buffer3, 5, TEXT("%g"), mouse[pcount]);
-            swprintf(buffer5, 5, TEXT("%g"), mouse[pcount + 1]);
-            wcscat_s(buffer1, _countof(buffer1), buffer2);
-            wcscat_s(buffer1, _countof(buffer1), buffer3);
-            wcscat_s(buffer1, _countof(buffer1), buffer4);
-            wcscat_s(buffer1, _countof(buffer1), buffer5);
-            SendMessage(List, LB_ADDSTRING, 0, (LPARAM)buffer1);
-            pcount = pcount + 2;
-        }
-        else
-        {
-            painton = 0;
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), HWND_DESKTOP, About);
-        }
-
-        UpdateWindow(hWnd);
-       
     }
         break;
     case WM_LBUTTONUP:
         break;
     case WM_MOUSEMOVE:
     {
-        mousep.x = GET_X_LPARAM(lParam);
-        mousep.y = GET_Y_LPARAM(lParam);
-        ClientToScreen(hWnd, &mousep);
         break;
     }
     case WM_COMMAND:
@@ -207,15 +197,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DestroyWindow(hWnd);
             break;
         case IDC_START:
-            OnBnClickButton1(hWnd);
-            write = 1;
+            fill_n(mouse, 50, NULL);
+            pcount = 0; 
+            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG2), HWND_DESKTOP, About);
             break;
         case IDC_STOP:
             break;
         case IDC_RESET:
             fill_n(mouse, 50, NULL);
             pcount = 0;
-            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 0, 40, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -226,8 +218,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         hdc = BeginPaint(hWnd, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-        TextOut(hdc, 105, 20, d2ws(mousep.x).c_str(), lstrlen(d2ws(mouse[0]).c_str()));
-        TextOut(hdc, 205, 20, d2ws(mousep.y).c_str(), lstrlen(d2ws(mouse[1]).c_str()));
         EndPaint(hWnd, &ps);
     }
     break;
@@ -237,19 +227,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
     {
       //  AddMenus(hWnd);
-        CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 300, 100, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
-        CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 300, 50, 30, hWnd, (HMENU)IDC_STOP, hInst, NULL);
-        CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 300, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
-        CreateWindow(TEXT("static"), TEXT("Cursor"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 0, 20, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
-        CreateWindow(TEXT("static"), TEXT("Xpos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 105, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
-        CreateWindow(TEXT("static"), TEXT("Ypos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 205, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
-        List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL , 0, 40, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+        CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 200, 100, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
+        CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 200, 50, 30, hWnd, (HMENU)IDC_STOP, hInst, NULL);
+        CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 200, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
+        List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL , 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
     }
     break;
-    case WM_INITDIALOG:
-        break;
-    case WM_TIMER:
-        break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -260,21 +243,79 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 // 정보 대화 상자의 메시지 처리기입니다.
 INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    PAINTSTRUCT ps;
+    HDC hdc, MemDC;
+    HBITMAP MyBitmap, OldBitmap;
+    if(painton == 1)
+        InvalidateRect(hWnd, NULL, FALSE);
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
     {
     case WM_INITDIALOG:
+        ShowWindow(hWnd, SW_MAXIMIZE);
+        SetWindowLong(hWnd, GWL_STYLE, WS_BORDER);
+        CreateWindow(TEXT("static"), TEXT("Cursor"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 0, 20, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        CreateWindow(TEXT("static"), TEXT("Xpos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 105, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        CreateWindow(TEXT("static"), TEXT("Ypos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 205, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
         return (INT_PTR)TRUE;
-
+    case WM_MOUSEMOVE:
+    {
+        mmove.x = GET_X_LPARAM(lParam);
+        mmove.y = GET_Y_LPARAM(lParam);
+        ClientToScreen(hWnd, &mmove);
+    }
+    break;
+    case WM_LBUTTONDOWN:
+    {
+        check[0] = TRUE;
+        if (pcount <= 18)
+        {
+            mclick.x = GET_X_LPARAM(lParam);
+            mclick.y = GET_Y_LPARAM(lParam);
+            ClientToScreen(hWnd, &mclick);
+            mouse[pcount] = mclick.x;
+            mouse[pcount + 1] = mclick.y;
+            pcount = pcount + 2;
+            write = 1;
+        }
+        else
+        {
+            painton = 0;
+            MessageBox(hWnd, L"10개 이상은 불가능합니다", NULL, MB_OK);
+        }
+    }
+    break;
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
-            EndDialog(hWnd, LOWORD(wParam));
             painton = 1;
+            InvalidateRect(hWnd, NULL, FALSE);
+            EndDialog(hWnd, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
         break;
+    case WM_PAINT:
+    {
+        hdc = BeginPaint(hWnd, &ps);
+        // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+        TextOut(hdc, 105, 20, d2ws(mmove.x).c_str(), lstrlen(d2ws(mmove.x).c_str()));
+        TextOut(hdc, 205, 20, d2ws(mmove.y).c_str(), lstrlen(d2ws(mmove.y).c_str()));
+
+        if (check[0] == TRUE)
+        {
+            MemDC = CreateCompatibleDC(hdc);
+            MyBitmap = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP1));
+            OldBitmap = (HBITMAP)SelectObject(MemDC, MyBitmap);
+            BitBlt(hdc, mouse[0], mouse[1], 1000, 1000, MemDC, 0, 0, SRCCOPY);
+            SelectObject(MemDC, OldBitmap);
+            DeleteObject(MyBitmap);
+            DeleteDC(MemDC);
+        }
+
+        EndPaint(hWnd, &ps);
     }
+    }
+            
     return (INT_PTR)FALSE;
 }
 /*
@@ -311,12 +352,10 @@ wstring d2ws(double d)
 }
 void OnBnClickButton1(HWND hWnd)
 {
-    write = 0;
     for (int i = 0; i < pcount; i += 2) {
         SetCursorPos(mouse[i], mouse[i+1]); // 정상
         mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
         mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
         Sleep(1000);
     }
-    write = 1;
  }
