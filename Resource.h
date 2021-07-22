@@ -23,12 +23,16 @@
 #define IDB_BITMAP8                     151
 #define IDB_BITMAP9                     152
 #define IDB_BITMAP10                    153
-#define IDC_START                       200
-#define IDC_STOP                        201
+#define IDC_WRITE                       200
+#define IDC_START                       201
 #define IDC_RESET                       202
 #define IDC_LISTBOX                     500
 #define IDC_STATIC                      -1
-
+#define IDM_FILE_NEW					1
+#define IDM_FILE_OPEN					2
+#define IDM_FILE_QUIT					3
+#define MAX_LOADSTRING					100
+#define IDC_SEND						 4
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
