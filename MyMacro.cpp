@@ -6,7 +6,6 @@
 #include "resource.h"
 
 
-
 using namespace std;
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
@@ -20,7 +19,7 @@ int bid;
 POINT mmove;
 POINT mclick;
 BOOL check[10] = { FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE };
-
+BOOL loop = TRUE;
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -31,6 +30,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 wstring d2ws(double d); /*DOUBLE형식의 마우스 좌표를 받아서 wstring형식으로 바꿔서 반환합니다.
                         (paint작업이나 list, 버튼, 레이블 등의 입력이 LPCWSTR을 주로 받기 때문에 이용합니다*/
 void MoveButton(HWND hWnd);
+
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -144,7 +144,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     if (pcount > 1 && write == 1)
         {
         write = 0;
-        OutputDebugString(L"1");
         List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
             
             for (int i = 0; i < pcount; i++)
@@ -170,6 +169,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_KEYDOWN:
+        OutputDebugString(L"큐큐");
+        loop = FALSE;
         break;
     case WM_COMMAND:
     {   
@@ -187,10 +188,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
             DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), HWND_DESKTOP, About);
             break;
-        case IDC_START:
-            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-            MoveButton(hWnd);
+        case IDC_START:              
+        {   SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            thread t1(MoveButton, hWnd);
+            t1.detach();
             break;
+        }
         case IDC_RESET:
             fill_n(mouse, 50, NULL);
             fill_n(check, 10, FALSE);
@@ -296,7 +299,7 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
     {   
         HDC MemDC;
-        HBITMAP MyBitmap, OldBitmap;
+        HBITMAP MyBitmap = NULL, OldBitmap = NULL;
 
         hdc = BeginPaint(hWnd, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
@@ -314,14 +317,12 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 OldBitmap = (HBITMAP)SelectObject(MemDC, MyBitmap);
                 BitBlt(hdc, int(mouse[i]), int(mouse[i+1]), 1000, 1000, MemDC, 0, 0, SRCCOPY);
             }
+
         }
 
-        if (check[0] == TRUE)
-        {
             SelectObject(MemDC, OldBitmap);
             DeleteObject(MyBitmap);
             DeleteDC(MemDC);
-        }
         EndPaint(hWnd, &ps);
     }
     }
@@ -344,22 +345,23 @@ wstring d2ws(double d)
 
     return r;
 }
+
+
+
+
 void MoveButton(HWND hWnd)
 {
-    BOOL loop = 1;
+    
+    loop = TRUE;
     while (loop)
     {
         for (int i = 0; i < pcount; i += 2) {
-            SetCursorPos(int(mouse[i]), int(mouse[i + 1])); // 정상
+            SetCursorPos(int(mouse[i]), int(mouse[i + 1]));
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
             mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-            Sleep(500);
-            if (GetAsyncKeyState(VK_ESCAPE))
-            {
-                loop = 0;
-                break;
-            }
+            Sleep(5000);
+
         }
 
     }
- }
+}
