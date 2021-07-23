@@ -5,13 +5,17 @@
 #include "MyMacro.h"
 #include "resource.h"
 
+struct Mouse {
+    double point[2];
+    double time;
+};
 
 using namespace std;
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
-double mouse[20];                               // 클릭한 좌표를 저장해놓고 반복시작할때 참고하는 배열
+Mouse mouse[10];                               // 클릭한 좌표를 저장해놓고 반복시작할때 참고하는 배열
 int painton = 1;                                // 1이면 WM_PAINT의 반복호출을함 0이면 멈춤
 int pcount = 0;                                 // mouse[20]에 값을 넣고 참조하는데 활용하는 변수
 int write = 0;                                  // write = 1이면 처음 윈도우의 listbox에 mouse[20]에 저장 된 값들을 넣어줌
@@ -20,6 +24,7 @@ POINT mmove;
 POINT mclick;
 BOOL check[10] = { FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE };
 BOOL loop = TRUE;
+clock_t t[10];
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -30,7 +35,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 wstring d2ws(double d); /*DOUBLE형식의 마우스 좌표를 받아서 wstring형식으로 바꿔서 반환합니다.
                         (paint작업이나 list, 버튼, 레이블 등의 입력이 LPCWSTR을 주로 받기 때문에 이용합니다*/
 void MoveButton(HWND hWnd);
-
+void StopMacro(HWND hWnd);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -150,12 +155,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 SendMessage(List, LB_DELETESTRING, 0, 0);
             }
-            for (int i = 0; i < pcount; i += 2)
+            for (int i = 0; i < pcount; i ++)
             {
                 wchar_t buffer1[60], buffer2[20] = TEXT(".Xpos : "), buffer3[10], buffer4[20] = TEXT("  Ypos : "), buffer5[10];
                 swprintf(buffer1, 4, TEXT("%d"), i / 2 + 1);
-                swprintf(buffer3, 5, TEXT("%g"), mouse[i]);
-                swprintf(buffer5, 5, TEXT("%g"), mouse[i + 1]);
+                swprintf(buffer3, 5, TEXT("%g"), mouse[i].point[0]);
+                swprintf(buffer5, 5, TEXT("%g"), mouse[i].point[1]);
                 wcscat_s(buffer1, _countof(buffer1), buffer2);
                 wcscat_s(buffer1, _countof(buffer1), buffer3);
                 wcscat_s(buffer1, _countof(buffer1), buffer4);
@@ -169,7 +174,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_KEYDOWN:
-        OutputDebugString(L"큐큐");
         loop = FALSE;
         break;
     case WM_COMMAND:
@@ -182,20 +186,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DestroyWindow(hWnd);
             break;
         case IDC_WRITE:
-            fill_n(mouse, 50, NULL);
-            fill_n(check, 10, FALSE);
+            SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_HIDEWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            fill_n(check, 10, FALSE); 
             pcount = 0; 
             List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), HWND_DESKTOP, About);
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, About);
             break;
         case IDC_START:              
-        {   SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        {   SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_HIDEWINDOW |SWP_NOMOVE | SWP_NOSIZE);
             thread t1(MoveButton, hWnd);
             t1.detach();
+            thread t2(StopMacro, hWnd);
+            t2.detach();
             break;
         }
         case IDC_RESET:
-            fill_n(mouse, 50, NULL);
             fill_n(check, 10, FALSE);
             pcount = 0;
             List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
@@ -231,6 +236,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 200, 100, 30, hWnd, (HMENU)IDC_WRITE, hInst, NULL);
         CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 200, 50, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
         CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 200, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
+        CreateWindow(L"static", L"중지:ESC", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 200, 100, 15, hWnd, (HMENU)IDC_RESET, hInst, NULL);
         List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL , 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
     }
     break;
@@ -242,7 +248,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 // 정보 대화 상자의 메시지 처리기입니다.
-INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK About(HWND hdig, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HDC hdc;
     PAINTSTRUCT ps;
@@ -252,46 +258,48 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG:
-        ShowWindow(hWnd, SW_MAXIMIZE);
-        SetWindowLong(hWnd, GWL_STYLE, WS_BORDER);
-        CreateWindow(TEXT("static"), TEXT("Cursor"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 0, 20, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
-        CreateWindow(TEXT("static"), TEXT("Xpos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 105, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
-        CreateWindow(TEXT("static"), TEXT("Ypos"), WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 205, 0, 100, 20, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+    {
+        ShowWindow(hdig, SW_MAXIMIZE);
+        SetWindowLong(hdig, GWL_EXSTYLE, WS_EX_LAYERED);
+        SetLayeredWindowAttributes(hdig, 0, 128, LWA_ALPHA);
         return (INT_PTR)TRUE;
+    }
     case WM_MOUSEMOVE:
     {
         mmove.x = GET_X_LPARAM(lParam);
         mmove.y = GET_Y_LPARAM(lParam);
-        ClientToScreen(hWnd, &mmove);
+        ClientToScreen(hdig, &mmove);
+        break;
     }
-    break;
     case WM_LBUTTONDOWN:
-    {
-        check[pcount/2] = TRUE;
-        if (pcount <= 18)
+    {   
+        t[pcount] = double(clock());
+        check[pcount] = TRUE;
+        if (pcount < 10)
         {
             mclick.x = GET_X_LPARAM(lParam);
             mclick.y = GET_Y_LPARAM(lParam);
-            ClientToScreen(hWnd, &mclick);
-            mouse[pcount] = mclick.x;
-            mouse[pcount + 1] = mclick.y;
-            pcount = pcount + 2;
+            ClientToScreen(hdig, &mclick);
+            mouse[pcount].point[0] = mclick.x;
+            mouse[pcount].point[1] = mclick.y;
+            pcount = pcount + 1;
             write = 1;
         }
         else
         {
             painton = 0;
-            if (MessageBox(hWnd, TEXT("10번 이상은 불가능합니다."), TEXT("WARNING"), MB_OK))
+            if (MessageBox(hdig, TEXT("10번 이상은 불가능합니다."), TEXT("WARNING"), MB_OK))
                 painton = 1;
          
         }
-        InvalidateRect(hWnd, NULL, FALSE);
+        OutputDebugString(d2ws(t[pcount]).c_str());
+        InvalidateRect(hdig, NULL, FALSE);
+        break;
     }
-    break;
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
-            EndDialog(hWnd, LOWORD(wParam));
+            EndDialog(hdig, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
         else if(LOWORD(wParam) == MB_OK)
@@ -301,21 +309,20 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HDC MemDC;
         HBITMAP MyBitmap = NULL, OldBitmap = NULL;
 
-        hdc = BeginPaint(hWnd, &ps);
+        hdc = BeginPaint(hdig, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-        TextOut(hdc, 105, 20, d2ws(mmove.x).c_str(), lstrlen(d2ws(mmove.x).c_str()));
-        TextOut(hdc, 205, 20, d2ws(mmove.y).c_str(), lstrlen(d2ws(mmove.y).c_str()));
+        TextOut(hdc, 1000, 10, L"반복할 좌표 선택 후 ESC" , 20);
 
         MemDC = CreateCompatibleDC(hdc);
         
-        for(int i=0;i<pcount;i+=2) //3번입력시 pcount = 6 이므로 i는 0,2,4가 들어감
+        for(int i=0;i<pcount;i++) 
         {
-            bid = 144+(i/2);
-            if (check[i/2] == TRUE)
+            bid = 144+(i);
+            if (check[i] == TRUE)
             {
                 MyBitmap = LoadBitmap(hInst, MAKEINTRESOURCE(bid));
                 OldBitmap = (HBITMAP)SelectObject(MemDC, MyBitmap);
-                BitBlt(hdc, int(mouse[i]), int(mouse[i+1]), 1000, 1000, MemDC, 0, 0, SRCCOPY);
+                BitBlt(hdc, int(mouse[i].point[0]), int(mouse[i].point[1]), 1000, 1000, MemDC, 0, 0, SRCCOPY);
             }
 
         }
@@ -323,7 +330,13 @@ INT_PTR CALLBACK About(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SelectObject(MemDC, OldBitmap);
             DeleteObject(MyBitmap);
             DeleteDC(MemDC);
-        EndPaint(hWnd, &ps);
+        EndPaint(hdig, &ps);
+        break;
+    }
+    case WM_DESTROY:
+    {
+        SetWindowPos(GetParent(hdig), HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+        break;
     }
     }
             
@@ -344,9 +357,7 @@ wstring d2ws(double d)
     delete[] buf;
 
     return r;
-}
-
-
+}                            
 
 
 void MoveButton(HWND hWnd)
@@ -355,13 +366,35 @@ void MoveButton(HWND hWnd)
     loop = TRUE;
     while (loop)
     {
-        for (int i = 0; i < pcount; i += 2) {
-            SetCursorPos(int(mouse[i]), int(mouse[i + 1]));
+        for (int i = 0; i < pcount; i ++) {   
+            SetCursorPos(int(mouse[i].point[0]), int(mouse[i].point[1])); 
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
             mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-            Sleep(5000);
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+            Sleep(500);
 
+            if(loop == FALSE)
+                break;
         }
 
+    }
+    SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+}
+
+void StopMacro(HWND hWnd) {
+    loop = TRUE;
+    while (loop)
+    {
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)  //8000 ok 8001 ok
+        {
+            loop = FALSE;
+
+        }
+        else if (GetAsyncKeyState(VK_ESCAPE) & 0x8001)
+        {
+            loop = FALSE;
+       
+        }
     }
 }

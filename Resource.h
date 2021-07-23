@@ -2,7 +2,12 @@
 // Microsoft Visual C++에서 생성한 포함 파일입니다.
 // MyMacro.rc에서 사용되고 있습니다.
 //
+#define IDM_FILE_NEW                    1
 #define IDC_MYICON                      2
+#define IDM_FILE_OPEN                   2
+#define IDM_FILE_QUIT                   3
+#define IDC_SEND                        4
+#define MAX_LOADSTRING                  100
 #define IDD_MYMACRO_DIALOG              102
 #define IDS_APP_TITLE                   103
 #define IDM_ABOUT                       104
@@ -28,11 +33,7 @@
 #define IDC_RESET                       202
 #define IDC_LISTBOX                     500
 #define IDC_STATIC                      -1
-#define IDM_FILE_NEW					1
-#define IDM_FILE_OPEN					2
-#define IDM_FILE_QUIT					3
-#define MAX_LOADSTRING					100
-#define IDC_SEND						 4
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED

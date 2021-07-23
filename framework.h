@@ -19,3 +19,5 @@
 #include <iostream>
 #include <atlstr.h>
 #include <thread>
+#include <conio.h>
+#include <time.h>
