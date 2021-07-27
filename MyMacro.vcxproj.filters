@@ -75,5 +75,35 @@
     <Image Include="bitmap10.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
+    <Image Include="bitmap1 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap2 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap3 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap4 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap5 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap6 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap7 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap8 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap9 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="bitmap10 - 복사본.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
   </ItemGroup>
 </Project>

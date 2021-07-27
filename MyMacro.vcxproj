@@ -159,15 +159,25 @@
     <ResourceCompile Include="MyMacro.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="bitmap1 - 복사본.bmp" />
     <Image Include="bitmap1.bmp" />
+    <Image Include="bitmap10 - 복사본.bmp" />
     <Image Include="bitmap10.bmp" />
+    <Image Include="bitmap2 - 복사본.bmp" />
     <Image Include="bitmap2.bmp" />
+    <Image Include="bitmap3 - 복사본.bmp" />
     <Image Include="bitmap3.bmp" />
+    <Image Include="bitmap4 - 복사본.bmp" />
     <Image Include="bitmap4.bmp" />
+    <Image Include="bitmap5 - 복사본.bmp" />
     <Image Include="bitmap5.bmp" />
+    <Image Include="bitmap6 - 복사본.bmp" />
     <Image Include="bitmap6.bmp" />
+    <Image Include="bitmap7 - 복사본.bmp" />
     <Image Include="bitmap7.bmp" />
+    <Image Include="bitmap8 - 복사본.bmp" />
     <Image Include="bitmap8.bmp" />
+    <Image Include="bitmap9 - 복사본.bmp" />
     <Image Include="bitmap9.bmp" />
     <Image Include="MyMacro.ico" />
     <Image Include="small.ico" />

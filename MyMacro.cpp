@@ -8,6 +8,7 @@
 struct Mouse {
     double point[2];
     double time;
+    BOOL dclick = FALSE;
 };
 
 using namespace std;
@@ -117,7 +118,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPED | WS_SYSMENU,
-      CW_USEDEFAULT, 0, 330, 270, nullptr, nullptr, hInstance, nullptr);
+      CW_USEDEFAULT, 0, 330, 370, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -149,7 +150,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     if (pcount > 1 && write == 1)
         {
         write = 0;
-        List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+        List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 100, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
             
             for (int i = 0; i < pcount; i++)
             {
@@ -158,7 +159,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             for (int i = 0; i < pcount; i ++)
             {
                 wchar_t buffer1[60], buffer2[20] = TEXT(".Xpos : "), buffer3[10], buffer4[20] = TEXT("  Ypos : "), buffer5[10];
-                swprintf(buffer1, 4, TEXT("%d"), i / 2 + 1);
+                swprintf(buffer1, 4, TEXT("%d"), i + 1);
                 swprintf(buffer3, 5, TEXT("%g"), mouse[i].point[0]);
                 swprintf(buffer5, 5, TEXT("%g"), mouse[i].point[1]);
                 wcscat_s(buffer1, _countof(buffer1), buffer2);
@@ -189,7 +190,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_HIDEWINDOW | SWP_NOMOVE | SWP_NOSIZE);
             fill_n(check, 10, FALSE); 
             pcount = 0; 
-            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 100, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
             DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, About);
             break;
         case IDC_START:              
@@ -203,7 +204,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case IDC_RESET:
             fill_n(check, 10, FALSE);
             pcount = 0;
-            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+            List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL, 5, 100, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -233,11 +234,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         x = (rtDesk.right - width) / 2;
         y = (rtDesk.bottom - height) / 2;
         MoveWindow(hWnd, x, y, width, height, TRUE);
-        CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 200, 100, 30, hWnd, (HMENU)IDC_WRITE, hInst, NULL);
-        CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 200, 50, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
-        CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 200, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
-        CreateWindow(L"static", L"중지:ESC", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 200, 100, 15, hWnd, (HMENU)IDC_RESET, hInst, NULL);
-        List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL , 5, 0, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
+        CreateWindow(L"static", L"매크로작성:기록시작", WS_CHILD | WS_VISIBLE, 0, 0, 250, 30, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        CreateWindow(L"static", L"매크로시작:start", WS_CHILD | WS_VISIBLE, 0, 30, 250, 30, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        CreateWindow(L"static", L"매크로종료:ESC버튼", WS_CHILD | WS_VISIBLE, 0, 60, 250, 30, hWnd, (HMENU)IDC_STATIC, hInst, NULL);
+        CreateWindow(L"button", L"기록시작", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,0, 300, 100, 30, hWnd, (HMENU)IDC_WRITE, hInst, NULL);
+        CreateWindow(L"button", L"Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 300, 50, 30, hWnd, (HMENU)IDC_START, hInst, NULL);
+        CreateWindow(L"button", L"Reset", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, 300, 50, 30, hWnd, (HMENU)IDC_RESET, hInst, NULL);
+        CreateWindow(L"static", L"중지:ESC", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 300, 100, 15, hWnd, (HMENU)IDC_RESET, hInst, NULL);
+        List = CreateWindow(TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL , 5, 100, 300, 200, hWnd, (HMENU)IDC_LISTBOX, hInst, 0);
     }
     break;
     default:
@@ -274,6 +278,7 @@ INT_PTR CALLBACK About(HWND hdig, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_LBUTTONDOWN:
     {   
         t[pcount] = double(clock());
+        mouse[pcount].time = t[pcount];
         check[pcount] = TRUE;
         if (pcount < 10)
         {
@@ -292,7 +297,32 @@ INT_PTR CALLBACK About(HWND hdig, UINT message, WPARAM wParam, LPARAM lParam)
                 painton = 1;
          
         }
-        OutputDebugString(d2ws(t[pcount]).c_str());
+        InvalidateRect(hdig, NULL, FALSE);
+        break;
+    }
+    case WM_RBUTTONDOWN:
+    {
+        t[pcount] = double(clock());
+        mouse[pcount].time = t[pcount];
+        mouse[pcount].dclick = TRUE;
+        check[pcount] = TRUE;
+        if (pcount < 10)
+        {
+            mclick.x = GET_X_LPARAM(lParam);
+            mclick.y = GET_Y_LPARAM(lParam);
+            ClientToScreen(hdig, &mclick);
+            mouse[pcount].point[0] = mclick.x;
+            mouse[pcount].point[1] = mclick.y;
+            pcount = pcount + 1;
+            write = 1;
+        }
+        else
+        {
+            painton = 0;
+            if (MessageBox(hdig, TEXT("10번 이상은 불가능합니다."), TEXT("WARNING"), MB_OK))
+                painton = 1;
+
+        }
         InvalidateRect(hdig, NULL, FALSE);
         break;
     }
@@ -311,16 +341,23 @@ INT_PTR CALLBACK About(HWND hdig, UINT message, WPARAM wParam, LPARAM lParam)
 
         hdc = BeginPaint(hdig, &ps);
         // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-        TextOut(hdc, 1000, 10, L"반복할 좌표 선택 후 ESC" , 20);
+        wstring w1 = L"클릭:L버튼 더블클릭:R버튼 종료:ESC";
+        TextOut(hdc, 1000, 100, w1.c_str() , w1.size());
 
         MemDC = CreateCompatibleDC(hdc);
         
         for(int i=0;i<pcount;i++) 
         {
             bid = 144+(i);
-            if (check[i] == TRUE)
+            if (check[i] == TRUE && mouse[i].dclick==FALSE)
             {
                 MyBitmap = LoadBitmap(hInst, MAKEINTRESOURCE(bid));
+                OldBitmap = (HBITMAP)SelectObject(MemDC, MyBitmap);
+                BitBlt(hdc, int(mouse[i].point[0]), int(mouse[i].point[1]), 1000, 1000, MemDC, 0, 0, SRCCOPY);
+            }
+            else if (check[i] == TRUE && mouse[i].dclick == TRUE)
+            {
+                MyBitmap = LoadBitmap(hInst, MAKEINTRESOURCE(bid+10));
                 OldBitmap = (HBITMAP)SelectObject(MemDC, MyBitmap);
                 BitBlt(hdc, int(mouse[i].point[0]), int(mouse[i].point[1]), 1000, 1000, MemDC, 0, 0, SRCCOPY);
             }
@@ -367,15 +404,26 @@ void MoveButton(HWND hWnd)
     while (loop)
     {
         for (int i = 0; i < pcount; i ++) {   
-            SetCursorPos(int(mouse[i].point[0]), int(mouse[i].point[1])); 
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-            Sleep(500);
-
-            if(loop == FALSE)
+            if (loop == FALSE)
                 break;
+            SetCursorPos(int(mouse[i].point[0]), int(mouse[i].point[1])); 
+
+            if (mouse[i].dclick == TRUE)
+            {
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+            }
+            else
+            {
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+            }
+            if (i + 1 < pcount)
+                Sleep(mouse[i + 1].time - mouse[i].time);
+            else
+                Sleep(500);
         }
 
     }
